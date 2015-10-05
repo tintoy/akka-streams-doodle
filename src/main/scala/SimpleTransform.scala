@@ -12,7 +12,7 @@ object SimpleTransform extends App {
   // Adapted from Typesafe's Akka Streams sample.
 
   // AF: Don't have good intuitions for how this stuff works yet, so for now we'll just cargo-cult it.
-	implicit val actorSystem = ActorSystem.create("SimpleSystem")
+  implicit val actorSystem = ActorSystem.create("SimpleSystem")
   import actorSystem.dispatcher
   implicit val materializer = ActorMaterializer()
 
