@@ -27,7 +27,8 @@ object TextTokens {
     import scala.annotation.tailrec
 
     // Generate a lazily-evaluated stream of tokens.
-    // I think this solution may have issues in terms of running out of stack space for large texts, but it's a start.
+    // This solution probably has issues in terms of running out of stack space for large texts, but it's a start.
+    // If readToken took a stream as a parameter, then tail-recursion would be possible by instead passing the concatenated streams to the recursive method call.
     val tokenStream: Stream[Token] = {
       def readToken(index: Int, previousToken: Token): Stream[Token] = {
         if (index < text.length) {
