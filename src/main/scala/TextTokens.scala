@@ -13,7 +13,7 @@ object TextTokens {
                 token match {
                   case TextTokens.Start => println("[Start]")
                   case TextTokens.Word(wordText) => println(s"[Word] '${wordText}'")
-                  case TextTokens.Whitespace(whitespaceText) => println(s"[Whitespace] '${whitespaceText}'")
+                  case TextTokens.Whitespace(WhitespaceText) => println(s"[Whitespace] '${WhitespaceText}'")
                   case TextTokens.Punctuation(punctuationText) => println(s"[Punctuation] '${punctuationText}'")
                   case TextTokens.End => println("[End]")
                 }
@@ -23,6 +23,8 @@ object TextTokens {
     /*
      * AF:Bug when dealing with single-quote characters. FIXME!
      */
+
+    import scala.annotation.tailrec
 
     // Generate a lazily evaulated stream of tokens.
     // I think this solution may have issues in terms of running out of stack space for large texts, but it's a start.
@@ -34,53 +36,51 @@ object TextTokens {
 
           val currentToken = previousToken match {
             case TextTokens.Start =>
-              if (currentChar.isWhitespace) {
-                TextTokens.Whitespace(currentChar.toString)
-              }
-              else if (currentChar.isLetterOrDigit) {
-                TextTokens.Word(currentChar.toString)
-              }
-              else {
-                TextTokens.Punctuation(currentChar.toString)
+              currentChar match {
+                case AlphanumericCharacter(value) => TextTokens.Word(value.toString)
+                case WhitespaceCharacter(value) => TextTokens.Whitespace(value.toString)
+                case value: Char => TextTokens.Punctuation(value.toString)
               }
             case TextTokens.Whitespace(currentWhitespaceText) =>
-              if (currentChar.isWhitespace) {
-                TextTokens.Whitespace(currentWhitespaceText + currentChar)
-              }
-              else if (currentChar.isLetterOrDigit) {
-                yieldToken = true
-                TextTokens.Word(currentChar.toString)
-              }
-              else
-              {
-                yieldToken = true
-                TextTokens.Punctuation(currentChar.toString)
+              currentChar match {
+                case AlphanumericCharacter(value) => {
+                  yieldToken = true
+
+                  TextTokens.Word(value.toString)
+                }
+                case WhitespaceCharacter(value) => TextTokens.Whitespace(currentWhitespaceText + value)
+                case value: Char => {
+                  yieldToken = true
+
+                  TextTokens.Punctuation(value.toString)
+                }
               }
             case TextTokens.Word(currentWordText) =>
-              if (currentChar.isWhitespace) {
-                yieldToken = true
-                TextTokens.Whitespace(currentChar.toString)
-              }
-              else if (currentChar.isLetterOrDigit) {
-                TextTokens.Word(currentWordText + currentChar)
-              }
-              else
-              {
-                yieldToken = true
-                TextTokens.Punctuation(currentChar.toString)
+              currentChar match {
+                case AlphanumericCharacter(value) => TextTokens.Word(currentWordText + value)
+                case WhitespaceCharacter(value) =>{
+                  yieldToken = true
+
+                  TextTokens.Whitespace(value.toString)
+                }
+                case value: Char => {
+                  yieldToken = true
+
+                  TextTokens.Punctuation(currentChar.toString)
+                }
               }
             case Punctuation(currentPunctuationText) =>
-              if (currentChar.isWhitespace) {
-                yieldToken = true
-                TextTokens.Whitespace(currentChar.toString)
-              }
-              else if (currentChar.isLetterOrDigit) {
-                yieldToken = true
-                TextTokens.Punctuation(currentPunctuationText + currentChar)
-              }
-              else
-              {
-                TextTokens.Punctuation(currentPunctuationText + currentChar)
+              currentChar match {
+                case AlphanumericCharacter(value) => {
+                  yieldToken = true
+                  TextTokens.Punctuation(currentPunctuationText + value)
+                }
+                case WhitespaceCharacter(value) => {
+                  yieldToken = true
+
+                  TextTokens.Whitespace(value.toString)
+                }
+                case value: Char => TextTokens.Punctuation(currentPunctuationText + value)
               }
           }
 
@@ -99,21 +99,81 @@ object TextTokens {
     tokenStream
   }
 
-  /** The base class for text segments */
+  /**
+   * The base class for text segments
+   */
   sealed abstract class Token(text: String)
 
-  /** Represents the start of the text */
+  /**
+   * Represents the start of the text
+   */
   case object Start extends Token("")
 
-  /** Represents a word */
+  /**
+   * Represents a word
+   */
   case class Word(text:String) extends Token(text)
 
-  /** Represents punctuation */
+  /**
+   * Represents punctuation
+   */
   case class Punctuation(text: String) extends Token(text)
 
-  /** Represents 1 or more contiguous whitespace characters */
+  /**
+   * Represents 1 or more contiguous Whitespace characters
+   */
   case class Whitespace(text: String) extends Token(text)
 
-  /** Singleton token representing the end of the text */
+  /**
+   * Singleton token representing the end of the text
+   */
   case object End extends Token("")
+
+  /**
+   * Represents a character in the input stream
+   * @param value The character value.
+   */
+  private sealed abstract class Character(value: Char)
+
+  /**
+   * Represents an alphanumeric character (A-Z,a-z,0-9).
+   * @param value The character value.
+   */
+  private case class AlphanumericCharacter(value: Char) extends Character(value)
+
+  /**
+   * Extractor for AlphanumericCharacter.
+   */
+  private object AlphanumericCharacter {
+    /**
+     * Attempt to extract an Alphanumeric from the specified character value (if it is an alphanumeric character).
+     * @param value The character value.
+     * @return Some Alphanumeric, or None.
+     */
+    def unapply(value: Char): Option[AlphanumericCharacter] = {
+      if (value.isLetterOrDigit) Some(AlphanumericCharacter(value))
+      else None
+    }
+  }
+
+  /**
+   * Represents a Whitespace character (A-Z,a-z,0-9).
+   * @param value The character value.
+   */
+  private case class WhitespaceCharacter(value: Char) extends Character(value)
+
+  /**
+   * Extractor for WhitespaceCharacter.
+   */
+  private object WhitespaceCharacter {
+    /**
+     * Attempt to extract an Alphanumeric from the specified character value (if it is an alphanumeric character).
+     * @param value The character value.
+     * @return Some Alphanumeric, or None.
+     */
+    def unapply(value: Char): Option[WhitespaceCharacter] = {
+      if (value.isWhitespace) Some(WhitespaceCharacter(value))
+      else None
+    }
+  }
 }
