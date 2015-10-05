@@ -11,6 +11,11 @@ object TextParser {
    */
   def parse(text: IndexedSeq[Char]): Seq[TextParser.TextToken] = {
     // TODO: Work out how to implement a generator method (like C#'s yield return).
+
+    // Since it appears that Scala doesn't natively support coroutines like C#'s yield return,
+    // we'll try a different approach.
+    // Maybe something like "for (currentChar <- text) { /* conditionally yield something here */ }"
+
     Seq(TextParser.End)
   }
 
