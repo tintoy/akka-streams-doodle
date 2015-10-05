@@ -26,7 +26,7 @@ object TextTokens {
 
     import scala.annotation.tailrec
 
-    // Generate a lazily evaulated stream of tokens.
+    // Generate a lazily-evaluated stream of tokens.
     // I think this solution may have issues in terms of running out of stack space for large texts, but it's a start.
     val tokenStream: Stream[Token] = {
       def readToken(index: Int, previousToken: Token): Stream[Token] = {
@@ -43,43 +43,37 @@ object TextTokens {
               }
             case TextTokens.Whitespace(currentWhitespaceText) =>
               currentChar match {
-                case AlphanumericCharacter(value) => {
+                case AlphanumericCharacter(value) =>
                   yieldToken = true
 
                   TextTokens.Word(value.toString)
-                }
                 case WhitespaceCharacter(value) => TextTokens.Whitespace(currentWhitespaceText + value)
-                case value: Char => {
+                case value: Char =>
                   yieldToken = true
 
                   TextTokens.Punctuation(value.toString)
-                }
               }
             case TextTokens.Word(currentWordText) =>
               currentChar match {
                 case AlphanumericCharacter(value) => TextTokens.Word(currentWordText + value)
-                case WhitespaceCharacter(value) =>{
+                case WhitespaceCharacter(value) =>
                   yieldToken = true
 
                   TextTokens.Whitespace(value.toString)
-                }
-                case value: Char => {
+                case value: Char =>
                   yieldToken = true
 
                   TextTokens.Punctuation(currentChar.toString)
-                }
               }
             case Punctuation(currentPunctuationText) =>
               currentChar match {
-                case AlphanumericCharacter(value) => {
+                case AlphanumericCharacter(value) =>
                   yieldToken = true
                   TextTokens.Punctuation(currentPunctuationText + value)
-                }
-                case WhitespaceCharacter(value) => {
+                case WhitespaceCharacter(value) =>
                   yieldToken = true
 
                   TextTokens.Whitespace(value.toString)
-                }
                 case value: Char => TextTokens.Punctuation(currentPunctuationText + value)
               }
           }
