@@ -22,6 +22,7 @@ object SimpleTransform extends App {
       |I don't know.
     """.stripMargin
 
+  println("Done!")
   println("Starting pipeline...")
   Source(() => text.split("\\s").iterator)
     .map(value => value.toUpperCase)
